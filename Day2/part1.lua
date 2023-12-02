@@ -1,0 +1,55 @@
+if(#arg < 1) then
+	print("luajit part1.lua <input file>")
+	return
+end
+
+local cubes = {
+	red = 12,
+	green = 13,
+	blue = 14
+}
+
+function ParseLine(str)
+	local gameNum = tonumber(str:match("Game (%d+):"))
+	local formatStr = str:sub(str:find(":")+2)	-- Get everything after the colon (the rectum string if you will)
+	-- Remove commas, tokenize by spaces and semicolons
+
+	local curCubes = {red = 0, green = 0, blue = 0}
+	local num
+	
+	-- True if game is possible; resets state
+	function evaluate()
+		local res = (cubes.red >= curCubes.red) and (cubes.green >= curCubes.green) and (cubes.blue >= curCubes.blue)
+		curCubes = {red = 0, green = 0, blue = 0}
+		return res
+	end
+	
+	for curTok in formatStr:gsub(",", ""):gmatch("[^%s]+") do
+		-- In-situ parsing; rock back and forth between a number and a color, semicolon or EOL triggers evaluation
+		if(not num) then
+			num = tonumber(curTok)
+		else
+			local trimTok = curTok:gsub(";", "")
+			curCubes[trimTok] = num
+			num = nil
+			if(#curTok > #trimTok and not evaluate()) then
+				return 0
+			end
+		end
+	end
+	
+	if(not evaluate()) then return 0 end
+	
+	return gameNum
+end
+
+function ParseFile(path)
+	local acc = 0
+	for l in io.lines(path) do
+		acc = acc + ParseLine(l)
+	end
+	
+	return acc
+end
+
+print(ParseFile(arg[1]))
